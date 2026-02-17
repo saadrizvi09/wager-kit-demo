@@ -115,7 +115,7 @@ export default function DashboardPage() {
                 <div className="border-t border-wk-border my-3" />
 
                 {/* Close Date */}
-                <div className="flex items-center gap-2 text-wk-muted text-sm mb-5">
+                <div className="flex items-center gap-2 text-wk-muted text-sm mb-4">
                   <svg
                     width="14"
                     height="14"
@@ -128,6 +128,28 @@ export default function DashboardPage() {
                     <polyline points="12,6 12,12 16,14" />
                   </svg>
                   Closes: {market.closesAt}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mt-auto pt-4 flex items-center justify-between gap-3">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/market/${market.slug}`);
+                    }}
+                    className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 border border-wk-border rounded-lg text-white text-sm font-medium transition-colors"
+                  >
+                    View Details
+                  </button>
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-wk-border rounded-lg text-white text-sm font-medium transition-colors flex items-center gap-1.5"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                    </svg>
+                    Test
+                  </button>
                 </div>
               </div>
             ))}
