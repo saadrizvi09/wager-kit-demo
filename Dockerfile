@@ -11,14 +11,17 @@ RUN apk add --no-cache redis bash curl
 # Copy backend package files
 COPY backend/package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including dev dependencies needed for build)
+RUN npm ci
 
 # Copy backend source
 COPY backend ./
 
 # Build NestJS application
 RUN npm run build
+
+# Remove dev dependencies to reduce image size (optional but recommended)
+RUN npm prune --omit=dev
 
 # Environment variables for HF Spaces
 ENV NODE_ENV=production
