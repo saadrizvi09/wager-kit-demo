@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #080810;
+  --bg-card: #12121e;
+  --border-color: #1e1e30;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: #ffffff;
+  min-height: 100vh;
+}
+
+/* Purple/blue gradient glow at top */
+.page-gradient {
+  background:
+    radial-gradient(ellipse at 20% -10%, rgba(107, 33, 168, 0.35) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% -10%, rgba(59, 130, 246, 0.25) 0%, transparent 45%),
+    var(--bg-primary);
+  min-height: 100vh;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a40;
+  border-radius: 3px;
+}
+
+/* Button styles */
+.btn-primary {
+  background: linear-gradient(135deg, #6b21a8, #3b82f6);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: #9ca3af;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.btn-outline:hover {
+  border-color: #3b82f6;
+  color: white;
+}
+
+/* Tag pills */
+.tag-pill {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  border: 1px solid #2a2a40;
+  background: rgba(255, 255, 255, 0.05);
+  color: #d1d5db;
+}
+
+/* Note tags */
+.note-tag {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.note-tag-green {
+  background: #065f46;
+  color: #6ee7b7;
+}
+.note-tag-blue {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
