@@ -68,14 +68,127 @@ git remote add space https://huggingface.co/spaces/YOUR-USERNAME/wagerkit-backen
 git push space main
 ```
 
-#### **Method 2: GitHub Sync** (Automatic Updates)
+#### **Method 2: GitHub Sync** (Automatic Updates) ⭐ Recommended
 
-1. In your HF Space, click **Settings** → **Repository**
-2. Click **Link to GitHub**
-3. Authorize Hugging Face to access your GitHub
-4. Select your repository: `YOUR-GITHUB-USERNAME/demo` (or whatever you named it)
-5. **Branch:** `main`
-6. Click **Link Repository**
+**This method auto-deploys every time you push to GitHub!**
+
+##### **Detailed Steps:**
+
+1. **Create the Space first** (complete Step 2 above)
+
+2. **Navigate to your Space's Settings:**
+   - Go to your Space page: `https://huggingface.co/spaces/YOUR-USERNAME/wagerkit-backend`
+   - Look at the top menu bar (same row as "App", "Files", "Community")
+   - Click **"Settings"** (gear icon ⚙️)
+
+3. **Find the Repository/Sync Section:**
+   
+   **Option A - If you see "Repository" or "Sync" tab:**
+   - In Settings sidebar, look for **"Repository"** or **"Sync with GitHub"**
+   - Click it
+   - You'll see a button **"Link to GitHub"** or **"Connect to GitHub"**
+   
+   **Option B - If you see "Factory Reboot":**
+   - Some HF Spaces interfaces show **"Factory Reboot"** instead
+   - Look for **"Source code"** section
+   - Click **"Link to GitHub repository"**
+   
+   **Option C - If you don't see any GitHub options:**
+   - This is normal for newly created Spaces
+   - **Use Method 1 (Direct Push) first** - see below
+   - After first push, the GitHub sync option will appear
+
+4. **Connect to GitHub:**
+   - Click **"Link to GitHub"** or **"Connect repository"**
+   - A popup opens asking for GitHub authorization
+   - Click **"Authorize Hugging Face"** (you may need to sign in to GitHub)
+   - HF will request permissions to read your repositories
+
+5. **Select Your Repository:**
+   - After authorization, you'll see a dropdown or list
+   - Search for or select: `YOUR-GITHUB-USERNAME/demo` (or your repo name)
+   - **Important:** Make sure the repo is **public** or you've granted HF access to private repos
+
+6. **Configure Branch:**
+   - **Branch to sync:** Select `main` (or `master` if that's your default)
+   - **Path in repository:** Leave blank (HF will use root `/`)
+   - **Dockerfile path:** Should auto-detect `Dockerfile` at root
+     - If you kept `Dockerfile.backend`, set path to: `Dockerfile.backend`
+
+7. **Save and Sync:**
+   - Click **"Link repository"** or **"Connect"**
+   - HF will immediately pull from GitHub and start building
+   - You'll see build logs in the **Logs** tab
+
+##### **Verification:**
+
+Once connected, you should see:
+- ✅ In Settings → Repository: Shows your GitHub repo URL
+- ✅ Every `git push origin main` triggers automatic rebuild
+- ✅ Space page shows "Connected to: github.com/YOUR-USERNAME/demo"
+
+##### **⚠️ Troubleshooting: Can't Find Repository Settings?**
+
+**Issue 1: "Settings has no Repository tab"**
+
+**Solution:** The Space hasn't been initialized yet. Do Method 1 first:
+```powershell
+# Add HF Space as remote and push once
+git remote add space https://huggingface.co/spaces/YOUR-USERNAME/wagerkit-backend
+git push space main
+```
+After this first push, go back to Settings and the Repository/Sync option will appear.
+
+---
+
+**Issue 2: "Authorization keeps failing"**
+
+**Solution:** 
+1. Go to GitHub → Settings → Applications → Authorized OAuth Apps
+2. Find "Hugging Face" and click it
+3. Click **"Revoke access"**
+4. Go back to HF Spaces and try connecting again (it will re-authorize)
+
+---
+
+**Issue 3: "Repository is not found"**
+
+**Solution:**
+- Ensure your GitHub repo is **public**, OR
+- In HF authorization screen, grant access to the specific private repository
+- Repo must already exist on GitHub before connecting
+
+---
+
+**Issue 4: "HF keeps using old code"**
+
+**Solution:**
+1. In Space Settings, look for **"Factory Reboot"**
+2. Click **"Reboot Space"** to force rebuild from GitHub
+3. Or push an empty commit to trigger rebuild:
+   ```powershell
+   git commit --allow-empty -m "Trigger HF rebuild"
+   git push origin main
+   ```
+
+---
+
+##### **Alternative: Use Method 1 First, Then Connect**
+
+If you can't find the GitHub sync option:
+
+```powershell
+# Step 1: Push directly to HF Space first
+git remote add space https://huggingface.co/spaces/YOUR-USERNAME/wagerkit-backend
+git push space main
+
+# Step 2: After first successful deployment, go to Settings
+# Now the "Repository" or "Sync" tab should appear
+# Follow steps above to link to GitHub
+
+# Step 3: From now on, only push to GitHub
+git push origin main  # This auto-deploys to HF Space
+```
 
 Now every push to GitHub main branch auto-deploys to HF Spaces! 🎉
 
