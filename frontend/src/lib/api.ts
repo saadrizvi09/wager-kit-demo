@@ -8,12 +8,14 @@ function getToken(): string | null {
 async function apiFetch(path: string, options: RequestInit = {}) {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache',
     ...(options.headers as Record<string, string>),
   };
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers,
+    cache: 'no-store',
   });
 
   if (!res.ok) {

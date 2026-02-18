@@ -94,6 +94,9 @@ export default function MarketDetailPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Reset state when slug changes to prevent showing stale market data
+    setMarket(null);
+    setLoading(true);
     if (slug) {
       getMarketDetail(slug)
         .then(setMarket)
@@ -463,7 +466,7 @@ export default function MarketDetailPage() {
           </div>
 
           <div className="h-80">
-            <Line data={chartData} options={chartOptions} />
+            <Line key={slug} data={chartData} options={chartOptions} />
           </div>
         </div>
 

@@ -77,18 +77,27 @@ sleep 2
 redis-cli ping > /dev/null
 echo "✅ Redis is ready"
 
-# Start Backend in background
-echo "🔧 Starting NestJS backend..."
+# Start Backend in background on port 3001
+# Use BACKEND_PORT to avoid conflict with the frontend PORT env var
+echo "🔧 Starting NestJS backend on port 3001..."
 cd /app/backend
-PORT=3001 node dist/main.js &
+BACKEND_PORT=3001 node dist/main.js &
 BACKEND_PID=$!
 sleep 3
-echo "✅ Backend started (PID: $BACKEND_PID)"
+
+# Verify backend is running
+if kill -0 $BACKEND_PID 2>/dev/null; then
+  echo "✅ Backend started (PID: $BACKEND_PID)"
+else
+  echo "❌ Backend failed to start!"
+  exit 1
+fi
 
 # Start Frontend (foreground - keeps container alive)
-echo "🌐 Starting Next.js frontend on port 7860..."
+# PORT=7860 is already set via Docker ENV
+echo "🌐 Starting Next.js frontend on port ${PORT}..."
 cd /app/frontend
-PORT=7860 node server.js
+HOSTNAME=0.0.0.0 node server.js
 
 EOF
 

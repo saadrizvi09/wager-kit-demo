@@ -18,7 +18,8 @@ async function bootstrap() {
   
   app.setGlobalPrefix('api');
   
-  const port = process.env.PORT || 3001;
+  // Use BACKEND_PORT to avoid conflicts with frontend PORT on Hugging Face
+  const port = process.env.BACKEND_PORT || 3001;
   await app.listen(port);
   console.log(`WagerKit API running on http://localhost:${port}`);
 }
