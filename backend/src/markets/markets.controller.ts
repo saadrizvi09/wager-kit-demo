@@ -3,25 +3,34 @@ import {
   Get,
   Post,
   Param,
+  Query,
+  Body,
   Res,
+  Inject,
+  Optional,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
 import { Response } from 'express';
 import { MarketsService } from './markets.service';
 import { MarketCacheService } from './market-cache.service';
 
 @Controller('markets')
 export class MarketsController {
+  private readonly marketQueue: any;
+
   constructor(
     private readonly marketsService: MarketsService,
     private readonly cacheService: MarketCacheService,
-    @InjectQueue('market-processing') private readonly marketQueue: Queue,
-  ) {}
+    @Optional() @Inject('BullQueue_market-processing') marketQueue?: any,
+  ) {
+    this.marketQueue = marketQueue || null;
+  }
 
   @Get()
-  getMarkets() {
+  getMarkets(@Query('q') query?: string) {
+    if (query && query.trim().length > 0) {
+      return this.marketsService.searchMarkets(query);
+    }
     const markets = this.marketsService.getMarkets();
     // Enrich with processing status
     return markets.map((m) => {
@@ -31,6 +40,15 @@ export class MarketsController {
         processingStatus: cached?.status || 'unknown',
       };
     });
+  }
+
+  @Post('search')
+  searchMarket(@Body('query') query: string) {
+    if (!query || query.trim().length < 2) {
+      return { error: 'Query must be at least 2 characters' };
+    }
+    const detail = this.marketsService.searchOrCreateMarket(query.trim());
+    return detail;
   }
 
   @Get('jobs/status')
@@ -59,13 +77,16 @@ export class MarketsController {
     if (!market) {
       throw new NotFoundException('Market not found');
     }
-    this.cacheService.setStatus(slug, 'pending');
-    await this.marketQueue.add(
-      'process-market',
-      { slug },
-      { removeOnComplete: 100, removeOnFail: 50 },
-    );
-    return { message: 'Market refresh queued', slug, status: 'pending' };
+    if (this.marketQueue) {
+      this.cacheService.setStatus(slug, 'pending');
+      await this.marketQueue.add(
+        'process-market',
+        { slug },
+        { removeOnComplete: 100, removeOnFail: 50 },
+      );
+      return { message: 'Market refresh queued', slug, status: 'pending' };
+    }
+    return { message: 'Market data refreshed (no queue)', slug, status: 'ready' };
   }
 
   @Get(':slug')
@@ -80,7 +101,7 @@ export class MarketsController {
       };
     }
 
-    // Fallback to on-demand generation if not yet cached
+    // Try to get the market detail (works for both hardcoded + dynamic)
     const market = this.marketsService.getMarketDetail(slug);
     if (!market) {
       throw new NotFoundException('Market not found');

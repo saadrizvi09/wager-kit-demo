@@ -323,9 +323,143 @@ export class MarketsService {
     }));
   }
 
+  /**
+   * Search / create a dynamic market from any user query.
+   * Generates a slug, realistic integrity scores, and odds history on the fly.
+   */
+  searchOrCreateMarket(query: string): MarketDetail {
+    const slug = this.slugify(query);
+
+    // Check if it matches an existing market
+    const existing = this.marketsData.find((m) => m.slug === slug);
+    if (existing) {
+      const oddsHistory = this.generateOddsHistory(slug);
+      return { ...existing, oddsHistory };
+    }
+
+    // Auto-detect tag from query keywords
+    const tag = this.detectTag(query);
+
+    // Generate a plausible closing date (30-180 days from now)
+    const hashVal = Math.abs(this.hashCode(slug));
+    const daysOut = 30 + (hashVal % 150);
+    const closesAt = new Date(Date.now() + daysOut * 86400000);
+    const closesAtStr = `${closesAt.getMonth() + 1}/${closesAt.getDate()}/${closesAt.getFullYear()}`;
+
+    // Build a dynamic market
+    const dynamicMarket: MarketDetail = {
+      slug,
+      title: this.titleCase(query),
+      tag,
+      closesAt: closesAtStr,
+      description: `Market analysis for: ${query}. This market is dynamically generated from user search and analyzed across multiple prediction market sources.`,
+      question: query.endsWith('?') ? query : `${query}?`,
+      resolutionCriteriaUrl: `https://wagerkit.xyz/resolution/${slug}`,
+      sources: [
+        { name: 'PredictIt', type: 'regulated' },
+        { name: 'Kalshi', type: 'regulated' },
+        { name: 'Polymarket', type: 'onchain' },
+        { name: 'WagerKit', type: 'onchain' },
+      ],
+      integrityScore: { overall: 0, marketClarity: 0, liquidityDepth: 0, crossSourceAgreement: 0, volatilitySanity: 0 },
+      notes: ['Dynamically generated market', 'Real-time analysis'],
+      simulatedMetrics: {
+        ticksPerHour: 20 + (hashVal % 40),
+        dailyVolumeK: 500 + (hashVal % 2000),
+        dataCompleteness: 0.6 + ((hashVal % 35) / 100),
+      },
+      oddsHistory: [],
+    };
+
+    const oddsHistory = this.generateOddsHistory(slug);
+    dynamicMarket.oddsHistory = oddsHistory;
+    dynamicMarket.integrityScore = this.calculateIntegrityScore(dynamicMarket, oddsHistory);
+
+    return dynamicMarket;
+  }
+
+  /**
+   * Search markets by query — returns matches from existing + generates dynamic results
+   */
+  searchMarkets(query: string): MarketSummary[] {
+    const q = query.toLowerCase().trim();
+    if (!q) return this.getMarkets();
+
+    // First, check existing markets for partial match
+    const matches = this.marketsData
+      .filter((m) =>
+        m.title.toLowerCase().includes(q) ||
+        m.tag.toLowerCase().includes(q) ||
+        m.description.toLowerCase().includes(q) ||
+        m.slug.toLowerCase().includes(q),
+      )
+      .map(({ slug, title, tag, closesAt }) => ({ slug, title, tag, closesAt }));
+
+    // Always add the user's query as a dynamic market option
+    const dynamicSlug = this.slugify(query);
+    const alreadyExists = matches.some((m) => m.slug === dynamicSlug);
+
+    if (!alreadyExists) {
+      const hashVal = Math.abs(this.hashCode(dynamicSlug));
+      const daysOut = 30 + (hashVal % 150);
+      const closesAt = new Date(Date.now() + daysOut * 86400000);
+      matches.unshift({
+        slug: dynamicSlug,
+        title: this.titleCase(query),
+        tag: this.detectTag(query),
+        closesAt: `${closesAt.getMonth() + 1}/${closesAt.getDate()}/${closesAt.getFullYear()}`,
+      });
+    }
+
+    return matches;
+  }
+
+  private slugify(text: string): string {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/-+/g, '_')
+      .substring(0, 60);
+  }
+
+  private titleCase(text: string): string {
+    return text
+      .split(' ')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+
+  private detectTag(query: string): string {
+    const q = query.toLowerCase();
+    if (/bitcoin|btc|eth|crypto|token|defi|halving/i.test(q)) return 'crypto';
+    if (/election|president|senate|congress|vote|trump|biden|governor/i.test(q)) return 'election';
+    if (/gdp|cpi|inflation|rate|fed|economy|macro|unemployment|treasury/i.test(q)) return 'macro';
+    if (/nfl|nba|mlb|soccer|sport|game|team|champion|playoff|world cup/i.test(q)) return 'sports';
+    if (/ai|tech|apple|google|meta|nvidia|startup|ipo/i.test(q)) return 'tech';
+    if (/oscar|grammy|emmy|movie|film|entertainment|music/i.test(q)) return 'entertainment';
+    if (/weather|climate|hurricane|earthquake|natural/i.test(q)) return 'weather';
+    if (/war|conflict|geopolit|nato|china|russia|ukraine/i.test(q)) return 'geopolitics';
+    return 'general';
+  }
+
+  private hashCode(s: string): number {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) {
+      h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+    }
+    return h;
+  }
+
   getMarketDetail(slug: string): MarketDetail | null {
     const market = this.marketsData.find((m) => m.slug === slug);
-    if (!market) return null;
+    if (!market) {
+      // Try to generate a dynamic market from the slug
+      const query = slug.replace(/_/g, ' ');
+      if (query.length < 3) return null;
+      return this.searchOrCreateMarket(query);
+    }
 
     const oddsHistory = this.generateOddsHistory(slug);
 

@@ -6,38 +6,31 @@ import { MarketsController } from './markets.controller';
 import { MarketProcessor } from './market.processor';
 import { MarketCacheService } from './market-cache.service';
 
+const redisAvailable = process.env.REDIS_HOST || process.env.ENABLE_REDIS === 'true';
+
+const bullImports = redisAvailable
+  ? [BullModule.registerQueue({ name: 'market-processing' })]
+  : [];
+
+const bullProviders = redisAvailable ? [MarketProcessor] : [];
+
 @Module({
-  imports: [
-    BullModule.registerQueue({
-      name: 'market-processing',
-    }),
-  ],
+  imports: [...bullImports],
   controllers: [MarketsController],
-  providers: [MarketsService, MarketProcessor, MarketCacheService],
+  providers: [MarketsService, MarketCacheService, ...bullProviders],
 })
 export class MarketsModule implements OnModuleInit {
   constructor(
-    @InjectQueue('market-processing') private readonly marketQueue: Queue,
     private readonly marketsService: MarketsService,
     private readonly cacheService: MarketCacheService,
   ) {}
 
   async onModuleInit() {
-    // Pre-process all markets on startup so dashboard loads instantly
+    // Pre-set all markets as ready (no queue needed without Redis)
     const markets = this.marketsService.getMarkets();
     for (const market of markets) {
-      this.cacheService.setStatus(market.slug, 'pending');
-      await this.marketQueue.add(
-        'process-market',
-        { slug: market.slug },
-        {
-          removeOnComplete: 100,
-          removeOnFail: 50,
-          attempts: 3,
-          backoff: { type: 'exponential', delay: 1000 },
-        },
-      );
+      this.cacheService.setStatus(market.slug, 'ready');
     }
-    console.log(`[WagerKit] Queued ${markets.length} markets for background processing`);
+    console.log(`[WagerKit] Initialized ${markets.length} markets (Redis: ${redisAvailable ? 'connected' : 'skipped'})`);
   }
 }

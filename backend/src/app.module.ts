@@ -1,19 +1,27 @@
-import { Module } from '@nestjs/common';
+import { Module, DynamicModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { AuthModule } from './auth/auth.module';
 import { MarketsModule } from './markets/markets.module';
 
+const redisAvailable = process.env.REDIS_HOST || process.env.ENABLE_REDIS === 'true';
+
+const optionalBull: DynamicModule[] = redisAvailable
+  ? [
+      BullModule.forRoot({
+        connection: {
+          host: process.env.REDIS_HOST || '127.0.0.1',
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+          maxRetriesPerRequest: null,
+        },
+      }),
+    ]
+  : [];
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    BullModule.forRoot({
-      connection: {
-        host: process.env.REDIS_HOST || '127.0.0.1',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        maxRetriesPerRequest: null,
-      },
-    }),
+    ...optionalBull,
     AuthModule,
     MarketsModule,
   ],

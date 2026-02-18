@@ -62,6 +62,19 @@ export async function getMarkets() {
   return res.json();
 }
 
+export async function searchMarkets(query: string) {
+  const res = await apiFetch(`/markets?q=${encodeURIComponent(query)}`);
+  return res.json();
+}
+
+export async function searchMarketDetail(query: string) {
+  const res = await apiFetch('/markets/search', {
+    method: 'POST',
+    body: JSON.stringify({ query }),
+  });
+  return res.json();
+}
+
 export async function getMarketDetail(slug: string) {
   const res = await apiFetch(`/markets/${slug}`);
   return res.json();
