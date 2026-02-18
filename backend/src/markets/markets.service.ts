@@ -238,41 +238,50 @@ export class MarketsService {
     const points: OddsDataPoint[] = [];
     const now = new Date();
 
-    // Per-market odds config — trend/cosAmp control wave amplitude,
-    // vol controls random noise, offsets control per-source spread.
-    // Tighter params for resolved/post-event markets mirror production convergence.
+    // Per-market odds config — each market has unique wave frequencies,
+    // phase offsets, and noise levels to produce visually distinct graphs.
     const seeds: Record<string, {
       base: number; trend: number; cosAmp: number;
       vol: number; offsets: [number, number, number, number];
+      sinFreq: number; cosFreq: number; phaseShift: number;
     }> = {
       us_election_2024_winner: {
-        base: 0.55, trend: 0.035, cosAmp: 0.017, vol: 0.008,
+        base: 0.55, trend: 0.035, cosAmp: 0.022, vol: 0.009,
         offsets: [0, 0.014, -0.011, 0.007],
+        sinFreq: 1.8, cosFreq: 3.6, phaseShift: 0,
       },
       btc_halving_2024: {
-        base: 0.72, trend: 0.02, cosAmp: 0.01, vol: 0.004,
+        base: 0.72, trend: 0.025, cosAmp: 0.015, vol: 0.006,
         offsets: [0, 0.009, -0.007, 0.004],
+        sinFreq: 3.2, cosFreq: 7.0, phaseShift: 1.2,
       },
       us_cpi_yoy_nov_2025: {
-        base: 0.62, trend: 0.055, cosAmp: 0.028, vol: 0.011,
+        base: 0.62, trend: 0.045, cosAmp: 0.032, vol: 0.013,
         offsets: [0, 0.024, -0.019, 0.014],
+        sinFreq: 2.4, cosFreq: 5.5, phaseShift: 2.5,
       },
     };
 
+    // For dynamic/unknown slugs, derive unique config from slug hash
+    const h = Math.abs(this.hashCode(slug));
     const config = seeds[slug] || {
-      base: 0.5, trend: 0.05, cosAmp: 0.02, vol: 0.008,
-      offsets: [0, 0.005, -0.003, 0.002] as [number, number, number, number],
+      base: 0.35 + (h % 40) / 100,
+      trend: 0.02 + (h % 30) / 1000,
+      cosAmp: 0.01 + (h % 20) / 1000,
+      vol: 0.005 + (h % 10) / 1000,
+      offsets: [
+        0,
+        0.005 + (h % 13) / 1000,
+        -0.003 - (h % 11) / 1000,
+        0.002 + (h % 7) / 1000,
+      ] as [number, number, number, number],
+      sinFreq: 1.5 + (h % 30) / 10,
+      cosFreq: 3.0 + (h % 50) / 10,
+      phaseShift: (h % 628) / 100,
     };
 
     // Deterministic pseudo-random based on slug hash
-    const hashCode = (s: string) => {
-      let h = 0;
-      for (let i = 0; i < s.length; i++) {
-        h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
-      }
-      return h;
-    };
-    let seed = Math.abs(hashCode(slug));
+    let seed = Math.abs(this.hashCode(slug + '_odds'));
     const pseudoRandom = () => {
       seed = (seed * 16807 + 0) % 2147483647;
       return (seed & 0xfffffff) / 0x10000000;
@@ -282,11 +291,11 @@ export class MarketsService {
       const time = new Date(now.getTime() - (95 - i) * 15 * 60 * 1000);
       const t = i / 96;
 
-      // Base trend with wave patterns (cosAmp now per-market)
+      // Each market uses unique wave frequencies + phase shift
       const base =
         config.base +
-        config.trend * Math.sin(t * Math.PI * 2.5) +
-        config.cosAmp * Math.cos(t * Math.PI * 5);
+        config.trend * Math.sin(t * Math.PI * config.sinFreq + config.phaseShift) +
+        config.cosAmp * Math.cos(t * Math.PI * config.cosFreq + config.phaseShift * 0.7);
 
       // Per-source variation using configured offsets & noise
       const polymarket = Math.max(0.01, Math.min(0.99,

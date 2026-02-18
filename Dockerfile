@@ -62,6 +62,6 @@ RUN chmod +x /app/start.sh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:7860/api/markets || exit 1
+  CMD curl -f http://localhost:7860/ || exit 1
 
 CMD ["/app/start.sh"]
