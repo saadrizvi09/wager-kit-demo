@@ -355,14 +355,19 @@ export class MarketsService {
     const closesAt = new Date(Date.now() + daysOut * 86400000);
     const closesAtStr = `${closesAt.getMonth() + 1}/${closesAt.getDate()}/${closesAt.getFullYear()}`;
 
-    // Build a dynamic market
+    // Build a Yes/No binary market
+    const yesNoTitle = query.toLowerCase().startsWith('will')
+      ? this.titleCase(query)
+      : `Will ${this.titleCase(query).replace(/\?$/, '')} Happen?`;
+    const yesNoQuestion = yesNoTitle.endsWith('?') ? yesNoTitle : `${yesNoTitle}?`;
+
     const dynamicMarket: MarketDetail = {
       slug,
-      title: this.titleCase(query),
+      title: yesNoTitle.replace(/\?$/, ''),
       tag,
       closesAt: closesAtStr,
-      description: `Market analysis for: ${query}. This market is dynamically generated from user search and analyzed across multiple prediction market sources.`,
-      question: query.endsWith('?') ? query : `${query}?`,
+      description: `Binary Yes/No market: ${yesNoQuestion} This market is dynamically generated and analyzed across multiple prediction market sources.`,
+      question: yesNoQuestion,
       resolutionCriteriaUrl: `https://wagerkit.xyz/resolution/${slug}`,
       sources: [
         { name: 'PredictIt', type: 'regulated' },
@@ -412,9 +417,12 @@ export class MarketsService {
       const hashVal = Math.abs(this.hashCode(dynamicSlug));
       const daysOut = 30 + (hashVal % 150);
       const closesAt = new Date(Date.now() + daysOut * 86400000);
+      const yesNoTitle = query.toLowerCase().startsWith('will')
+        ? this.titleCase(query)
+        : `Will ${this.titleCase(query).replace(/\?$/, '')} Happen`;
       matches.unshift({
         slug: dynamicSlug,
-        title: this.titleCase(query),
+        title: yesNoTitle.replace(/\?$/, ''),
         tag: this.detectTag(query),
         closesAt: `${closesAt.getMonth() + 1}/${closesAt.getDate()}/${closesAt.getFullYear()}`,
       });

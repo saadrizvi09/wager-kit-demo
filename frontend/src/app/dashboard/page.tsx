@@ -27,13 +27,13 @@ const TAG_COLORS: Record<string, string> = {
 
 const SUGGESTIONS = [
   'Will Bitcoin reach $150k by 2026?',
-  'Next US President 2028',
-  'Will AI replace software engineers?',
-  'Fed interest rate cut March 2026',
-  'Super Bowl 2027 winner',
-  'Tesla stock above $500',
-  'Will Ukraine war end in 2026?',
-  'Oscar Best Picture 2027',
+  'Will AI replace software engineers by 2030?',
+  'Will the Fed cut rates in March 2026?',
+  'Will Tesla stock go above $500?',
+  'Will the Ukraine war end in 2026?',
+  'Will SpaceX land humans on Mars by 2030?',
+  'Will inflation drop below 2% in 2026?',
+  'Will TikTok be banned in the US?',
 ];
 
 export default function DashboardPage() {
